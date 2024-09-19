@@ -87,7 +87,7 @@ const LoginScreen = () => {
 
       {/* Texto de "Olvidaste tu contraseña" */}
       <TouchableOpacity>
-        <Text style={styles.forgotText}>Forgot your password?</Text>
+        <Text style={styles.forgotText}></Text>
       </TouchableOpacity>
 
       {/* Botón de inicio de sesión */}
@@ -95,12 +95,7 @@ const LoginScreen = () => {
         <Text style={styles.signInButtonText}>{loading ? 'Signing in...' : 'Sign in'}</Text>
       </TouchableOpacity>
 
-      {/* Opciones de inicio de sesión social */}
-      <View style={styles.socialContainer}>
-        <TouchableOpacity style={styles.socialButton}>
-          <Ionicons name="logo-google" size={28} color="#DB4437" />
-        </TouchableOpacity>
-      </View>
+      
 
       {/* Botón de registro */}
       <TouchableOpacity style={styles.signUpButton} onPress={() => navigation.navigate('Signup')}>
