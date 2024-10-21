@@ -34,7 +34,7 @@ const LoginScreen = () => {
       setPassword("");
 
       // Navegar a la siguiente pantalla (reemplazar 'Inventario' con la pantalla objetivo)
-      navigation.navigate('Landing');
+      navigation.navigate('Home');
     } catch (error) {
       // Mostrar mensaje de error
       Alert.alert('Error', error.message || 'Error al iniciar sesión');
