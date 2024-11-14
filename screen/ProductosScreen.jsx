@@ -1,66 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, Image, TextInput } from 'react-native';
+import { View, Text, FlatList, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import axios from 'axios';
 import { FontAwesome } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProductosScreen = ({ navigation }) => {
+  const userId = 24; // ID de usuario simulado para pruebas
   const [productos, setProductos] = useState([]);
-  const [categorias, setCategorias] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(''); // Para la búsqueda
+  const [loading, setLoading] = useState(true);
+  const [cartCount, setCartCount] = useState(0); // Estado local para el contador de carrito
 
   useEffect(() => {
-    const fetchProductosYCategorias = async () => {
+    const fetchProductos = async () => {
       try {
-        setLoading(true);
-        // Obtener productos desde la API
-        const productosResponse = await axios.get('https://backendfitmrp-production.up.railway.app/api/products');
-        setProductos(productosResponse.data);
-
-        // Obtener categorías desde la API
-        const categoriasResponse = await axios.get('https://backendfitmrp-production.up.railway.app/api/categories');
-        setCategorias(categoriasResponse.data);
-
-        setLoading(false);
+        const token = await AsyncStorage.getItem('token');
+        const response = await axios.get('https://backendfitmrp-production.up.railway.app/api/products', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setProductos(response.data);
       } catch (error) {
-        console.error('Error al obtener los datos:', error);
+        console.error('Error al obtener los productos:', error);
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchProductosYCategorias();
+    fetchProductos();
   }, []);
 
-  // Función para obtener el nombre de la categoría
-  const getCategoriaNombre = (id) => {
-    const categoria = categorias.find((cat) => cat.id === id);
-    return categoria ? categoria.nombre : 'Sin Categoría';
-  };
-
-  // Función para manejar el filtrado de productos
-  const handleSearch = () => {
-    return productos.filter((item) =>
-      item.nombre.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const addToCart = async (productId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await axios.post(
+        'https://backendfitmrp-production.up.railway.app/api/carrito/add-item',
+        { usuario_id: userId, producto_id: productId, cantidad: 1 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCartCount(cartCount + 1); // Actualiza el contador de carrito en el estado local
+    } catch (error) {
+      console.error('Error al añadir al carrito:', error);
+    }
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.productContainer}>
-      {/* Imagen del producto */}
       <Image source={{ uri: item.image }} style={styles.productImage} />
-
-      {/* Título del producto */}
       <Text style={styles.productTitle}>{item.nombre}</Text>
-
-      {/* Precio del producto */}
       <Text style={styles.productPrice}>${item.precio}</Text>
-
-      {/* Categoría del producto */}
-      <Text style={styles.productCategory}>{getCategoriaNombre(item.categoria_id)}</Text>
-
-      {/* Botón de añadir */}
-      <TouchableOpacity style={styles.addButton}>
-        <Text style={styles.addButtonText}>Add</Text>
+      <TouchableOpacity style={styles.addButton} onPress={() => addToCart(item.id)}>
+        <Text style={styles.addButtonText}>Agregar al Carrito</Text>
       </TouchableOpacity>
     </View>
   );
@@ -68,43 +56,28 @@ const ProductosScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#FF6F00" style={styles.loadingIndicator} />
+        <ActivityIndicator size="large" color="#FF6F00" />
       ) : (
         <>
-          {/* Barra superior con ícono de hamburguesa, título y de usuario */}
+          {/* Barra superior con el ícono del carrito y contador */}
           <View style={styles.topBar}>
-            {/* Ícono de hamburguesa a la izquierda */}
-            <TouchableOpacity style={styles.menuIcon} onPress={() => navigation.openDrawer()}>
-              <FontAwesome name="bars" size={24} color="#FF5722" />
-            </TouchableOpacity>
-
-            {/* Título de la página */}
             <Text style={styles.title}>Productos</Text>
-
-            {/* Ícono de usuario a la derecha */}
-            <TouchableOpacity style={styles.userIcon} onPress={() => navigation.navigate('UserProfile')}>
-              <FontAwesome name="user" size={24} color="#FF5722" />
+            <TouchableOpacity style={styles.cartIcon} onPress={() => navigation.navigate('Cart')}>
+              <FontAwesome name="shopping-cart" size={24} color="#FF5722" />
+              {cartCount > 0 && (
+                <View style={styles.cartCount}>
+                  <Text style={styles.cartCountText}>{cartCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
 
-          {/* Barra de búsqueda debajo del título */}
-          <View style={styles.searchContainer}>
-            <FontAwesome name="search" size={20} color="#757575" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchBar}
-              placeholder="Buscar productos..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-
-          {/* Lista de Productos */}
+          {/* Lista de productos */}
           <FlatList
-            data={handleSearch()} // Filtrar productos por la búsqueda
+            data={productos}
             keyExtractor={(item) => item.id.toString()}
             renderItem={renderItem}
-            numColumns={2} // Mostrar productos en dos columnas
-            key={'2-columns'} // Forzar renderizado con la clave "2-columns"
+            numColumns={2}
             contentContainerStyle={styles.listContainer}
           />
         </>
@@ -116,48 +89,36 @@ const ProductosScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5', // Fondo gris claro
+    backgroundColor: '#F5F5F5',
   },
   topBar: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#F5F5F5',
-    elevation: 3,
-    shadowColor: '#F5F5F5',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  menuIcon: {
-    marginRight: 10,
+    backgroundColor: '#FFFFFF',
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#37474F', // Cambié el color a un gris oscuro más natural y armonioso
+    color: '#37474F',
   },
-  userIcon: {
-    marginLeft: 15,
+  cartIcon: {
+    position: 'relative',
   },
-  searchContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F0F0F0',
-    borderRadius: 25,
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    marginHorizontal: 16,
-    marginVertical: 10, // Separación de la barra de búsqueda
+  cartCount: {
+    position: 'absolute',
+    top: -5,
+    right: -10,
+    backgroundColor: '#FF5722',
+    borderRadius: 10,
+    paddingHorizontal: 6,
   },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchBar: {
-    flex: 1,
-    fontSize: 16,
-    paddingVertical: 8,
+  cartCountText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   listContainer: {
     paddingHorizontal: 16,
@@ -165,9 +126,9 @@ const styles = StyleSheet.create({
   },
   productContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    margin: 10,
+    borderRadius: 10,
     padding: 15,
+    margin: 8,
     flex: 1,
     alignItems: 'center',
     shadowColor: '#000',
@@ -185,24 +146,18 @@ const styles = StyleSheet.create({
   productTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#212121', // Negro
+    color: '#212121',
     textAlign: 'center',
   },
   productPrice: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FF5722', // Naranja para el precio
+    color: '#FF5722',
     marginTop: 5,
-  },
-  productCategory: {
-    fontSize: 14,
-    color: '#00796B', // Verde para la categoría
-    marginTop: 5,
-    textAlign: 'center',
   },
   addButton: {
     marginTop: 10,
-    backgroundColor: '#FF5722', // Botón naranja
+    backgroundColor: '#FF5722',
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 10,
@@ -210,9 +165,6 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#FFF',
     fontWeight: 'bold',
-  },
-  loadingIndicator: {
-    marginVertical: 20,
   },
 });
 

@@ -2,19 +2,19 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { FontAwesome } from '@expo/vector-icons';
 
+import CartScreen from './CartScreen';
 import ProductosScreen from './ProductosScreen';
 import MovimientosScreen from './MovimientosScreen';
 import ControlNivelesInventario from './ControlNivelesInventario';
-import LandingScreen from './LandingScreen';
 import TrazabilidadMateriaPrimaScreen from './TrazabilidadMateriaPrimaScreen';
+
 const Tab = createBottomTabNavigator();
 
 const AppNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-          headerShown: false, // Para ocultar el header por defecto
-        
+        headerShown: false, // Ocultar encabezado predeterminado
         tabBarIcon: ({ color, size }) => {
           let iconName;
 
@@ -26,14 +26,16 @@ const AppNavigator = () => {
             iconName = 'cubes';
           } else if (route.name === 'TrazabilidadMP') {
             iconName = 'home';
+          } else if (route.name === 'Carrito') {
+            iconName = 'shopping-cart';
           }
 
           return <FontAwesome name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#FF5722',  // Naranja para el ícono activo
+        tabBarActiveTintColor: '#FF5722', // Naranja para el icono activo
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
-          backgroundColor: '#212121',  // Fondo oscuro
+          backgroundColor: '#212121', // Fondo oscuro
         },
       })}
     >
@@ -41,6 +43,7 @@ const AppNavigator = () => {
       <Tab.Screen name="Productos" component={ProductosScreen} />
       <Tab.Screen name="Trazabilidad" component={MovimientosScreen} />
       <Tab.Screen name="Inventario" component={ControlNivelesInventario} />
+      <Tab.Screen name="Carrito" component={CartScreen} />
     </Tab.Navigator>
   );
 };

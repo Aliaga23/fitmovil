@@ -10,6 +10,7 @@ const Stack = createNativeStackNavigator();
 
 const App = () => {
   return (
+
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
@@ -22,6 +23,7 @@ const App = () => {
         <Stack.Screen name="Home" component={AppNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
+
   );
 };
 
